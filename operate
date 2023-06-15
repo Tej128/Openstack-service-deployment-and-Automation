@@ -65,6 +65,8 @@ operation_process() {
         fi
     else
         echo "$(date) Required Number of servers $wanted_nodes, already present."
+	echo "[webservers]" >> $hostsfile
+	dev_config
     fi
 }
 
@@ -75,7 +77,6 @@ sshkey="$3"
 
 echo "$(date) Initializing the operate sequence..."
 source "$openrc"
-
 net_name="${2}_network"
 snet_name="${2}_subnet"
 key_name="${2}_key"
@@ -91,83 +92,83 @@ knownhosts="known_hosts"
 hostsfile="hosts"
 f1="$(cat floating1)"
 
-playbook_status=0
+while true
+do
 
-test -f "$sshconfig" && rm "$sshconfig"
-test -f "$knownhosts" && rm "$knownhosts"
-test -f "$hostsfile" && rm "$hostsfile"
+    test -f "$sshconfig" && rm "$sshconfig"
+    test -f "$knownhosts" && rm "$knownhosts"
+    test -f "$hostsfile" && rm "$hostsfile"
 
-operation_process
+    operation_process
 
-HAPfixedip=$(openstack server show $proxy -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
-HAPfixedip2=$(openstack server show $proxy2 -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
+    HAPfixedip=$(openstack server show $proxy -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
+    HAPfixedip2=$(openstack server show $proxy2 -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
 
-echo "$(date) Generating config file"
-echo "Host $bastionNSO" >> $sshconfig
-echo "   User ubuntu" >> $sshconfig
-echo "   HostName $f1" >> $sshconfig
-echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
-echo "   UserKnownHostsFile /dev/null" >> $sshconfig
-echo "   StrictHostKeyChecking no" >> $sshconfig
-echo "   PasswordAuthentication no" >> $sshconfig
+    echo "$(date) Generating config file"
+    echo "Host $bastionNSO" >> $sshconfig
+    echo "   User ubuntu" >> $sshconfig
+    echo "   HostName $f1" >> $sshconfig
+    echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
+    echo "   UserKnownHostsFile /dev/null" >> $sshconfig
+    echo "   StrictHostKeyChecking no" >> $sshconfig
+    echo "   PasswordAuthentication no" >> $sshconfig
 
-echo " " >> $sshconfig
-echo "Host $proxy" >> $sshconfig
-echo "   User ubuntu" >> $sshconfig
-echo "   HostName $HAPfixedip" >> $sshconfig
-echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
-echo "   StrictHostKeyChecking no" >> $sshconfig
-echo "   PasswordAuthentication no ">> $sshconfig
-echo "   ProxyJump $bastionNSO" >> $sshconfig
+    echo " " >> $sshconfig
+    echo "Host $proxy" >> $sshconfig
+    echo "   User ubuntu" >> $sshconfig
+    echo "   HostName $HAPfixedip" >> $sshconfig
+    echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
+    echo "   StrictHostKeyChecking no" >> $sshconfig
+    echo "   PasswordAuthentication no ">> $sshconfig
+    echo "   ProxyJump $bastionNSO" >> $sshconfig
 
-echo " " >> $sshconfig
-echo "Host $proxy2" >> $sshconfig
-echo "   User ubuntu" >> $sshconfig
-echo "   HostName $HAPfixedip2" >> $sshconfig
-echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
-echo "   StrictHostKeyChecking no" >> $sshconfig
-echo "   PasswordAuthentication no ">> $sshconfig
-echo "   ProxyJump $bastionNSO" >> $sshconfig
+    echo " " >> $sshconfig
+    echo "Host $proxy2" >> $sshconfig
+    echo "   User ubuntu" >> $sshconfig
+    echo "   HostName $HAPfixedip2" >> $sshconfig
+    echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
+    echo "   StrictHostKeyChecking no" >> $sshconfig
+    echo "   PasswordAuthentication no ">> $sshconfig
+    echo "   ProxyJump $bastionNSO" >> $sshconfig
 
-echo "$(date) Generating host file"
-echo "[bastion]" >> $hostsfile
-echo "$bastionNSO" >> $hostsfile
-echo " " >> $hostsfile
-echo "[HAproxy]" >> $hostsfile
-echo "$proxy" >> $hostsfile
-echo "$proxy2" >> $hostsfile
-echo " " >> $hostsfile
-echo " " >> $hostsfile
-echo "[primary_proxy]" >> $hostsfile
-echo "$proxy" >> $hostsfile
-echo " " >> $hostsfile
-echo "[backup_proxy]" >> $hostsfile
-echo "$proxy2" >> $hostsfile
-echo " " >> $hostsfile
-echo "[all:vars]" >> $hostsfile
-echo "ansible_user=ubuntu" >> $hostsfile
-echo "ansible_ssh_common_args="-F $sshconfig"" >> $hostsfile
+    echo "$(date) Generating host file"
+    echo "[bastion]" >> $hostsfile
+    echo "$bastionNSO" >> $hostsfile
+    echo " " >> $hostsfile
+    echo "[HAproxy]" >> $hostsfile
+    echo "$proxy" >> $hostsfile
+    echo "$proxy2" >> $hostsfile
+    echo " " >> $hostsfile
+    echo " " >> $hostsfile
+    echo "[primary_proxy]" >> $hostsfile
+    echo "$proxy" >> $hostsfile
+    echo " " >> $hostsfile
+    echo "[backup_proxy]" >> $hostsfile
+    echo "$proxy2" >> $hostsfile
+    echo " " >> $hostsfile
+    echo "[all:vars]" >> $hostsfile
+    echo "ansible_user=ubuntu" >> $hostsfile
+    echo "ansible_ssh_common_args="-F $sshconfig"" >> $hostsfile
 
-server_ids=$(openstack server list -f value -c ID)
-# Check the status of each server
-for server_id in $server_ids; do
-    status=$(openstack server show -f value -c status $server_id)
-		while [ "$status" != "ACTIVE" ]; do
-			sleep 10
-		    status=$(openstack server show -f value -c status $server_id)
-		done
-		echo "$(date) Server $server_id is active"
+    server_ids=$(openstack server list -f value -c ID)
+    # Check the status of each server
+    for server_id in $server_ids; do
+        status=$(openstack server show -f value -c status $server_id)
+		    while [ "$status" != "ACTIVE" ]; do
+			    sleep 10
+		        status=$(openstack server show -f value -c status $server_id)
+		    done
+		    echo "$(date) Server $server_id is active"
+    done
+
+    sleep 5
+
+    echo "$(date) initialising ansible-playbook"
+
+
+    ansible-playbook -i hosts -user='root' --ssh-extra-args='-p 22 -o ConnectionAttempts=10 -o StrictHostKeyChecking=no' operate_configure.yaml
+
+    echo "Entering into sleep mode"
+
+    sleep 30
 done
-
-sleep 5
-
-echo "$(date) initialising ansible-playbook"
-
-
-ansible-playbook -i hosts -user='root' --ssh-extra-args='-p 22 -o ConnectionAttempts=10 -o StrictHostKeyChecking=no' install_configure.yaml
-
-echo "Entering into sleep mode"
-
-sleep 30
-
-echo "Sleep mode complete"
