@@ -85,13 +85,14 @@ delete_networks() {
 delete_security_groups() {
     security_group_name=$1
     delete=$(openstack security group delete $security_group_name)
+    echo "Security group deleted"
 }
 
 delete_keys() {
     keypair_name=$1
     if openstack keypair show $keypair_name; then
         echo "Keypair $keypair_name exists."
-        openstack keypair delete $keypair_name
+        del=$(openstack keypair delete $keypair_name)
         echo "Keypair $keypair_name deleted."
     else
         echo "Keypair $keypair_name does not exist."
