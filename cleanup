@@ -5,7 +5,7 @@ delete_servers() {
     server_ids=$(openstack server list --name "$nametag" -c ID -f value)
     a=$(echo "$server_ids" | wc -l)
     if [ -n "$server_ids" ]; then
-        echo "$(date) There are $n servers in total"
+        echo "$(date) There are $a servers in total"
         echo "$(date) Deleting servers..."
         for server_id in $server_ids; do
             openstack server delete $server_id
@@ -85,17 +85,18 @@ delete_networks() {
 delete_security_groups() {
     security_group_name=$1
     delete=$(openstack security group delete $security_group_name)
-    echo "Security group deleted"
+    echo "$(date) Security group deleted"
 }
 
 delete_keys() {
     keypair_name=$1
-    if openstack keypair show $keypair_name; then
-        echo "Keypair $keypair_name exists."
+    key_name=$(openstack keypair show $keypair_name)
+    if [ -n "$key_name" ]; then
+        echo "$(date) Keypair $keypair_name exists."
         del=$(openstack keypair delete $keypair_name)
-        echo "Keypair $keypair_name deleted."
+        echo "$(date) Keypair $keypair_name deleted."
     else
-        echo "Keypair $keypair_name does not exist."
+        echo "$(date) Keypair $keypair_name does not exist."
     fi
 }
 
@@ -137,4 +138,4 @@ echo "$(date) Deleted virtual port $viprt"
 delete_subnets
 delete_networks $nametag
 delete_security_groups $secgroupname
-delete_keys $key_name
+delete_keys $key_name
