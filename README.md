@@ -10,10 +10,5 @@ chmod +x filename
 ./filename <openrc_file> <tag> <ssh_public_key>
 
 software required to run the project are 
-openstack client 
-Ansible
-jq
-snmp
-pip
-python3
+openstack-client, Ansible,jq,snmp,pip,python3
 
