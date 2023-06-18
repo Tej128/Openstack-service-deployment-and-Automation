@@ -138,4 +138,5 @@ echo "$(date) Deleted virtual port $viprt"
 delete_subnets
 delete_networks $nametag
 delete_security_groups $secgroupname
-delete_keys $key_name
+del=$(openstack keypair delete $key_name)
+echo "$(date) Keypair $keypair_name deleted."
