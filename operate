@@ -9,17 +9,17 @@ dev_config(){
     do
         a=$(($i+1))
         nodes_nam=${nodes}${a}
-        ip_address=$(openstack server list --name $nodes_nam -c Networks -f value | grep -Po  '\d+\.\d+\.\d+\.\d+')
-        echo " " >> $sshconfig
-        echo "Host $nodes_nam" >> $sshconfig
-        echo "   User ubuntu" >> $sshconfig
-        echo "   HostName $ip_address" >> $sshconfig
-        echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
-        echo "   UserKnownHostsFile=~/dev/null" >> $sshconfig
-        echo "   StrictHostKeyChecking no" >> $sshconfig
-        echo "   PasswordAuthentication no" >> $sshconfig
-        echo "   ProxyJump $bastionNSO" >> $sshconfig 
-        echo "$nodes_nam" >> $hostsfile
+        ip_address=$(openstack server list --name "$nodes_nam" -c Networks -f value | grep -Po  '\d+\.\d+\.\d+\.\d+')
+        echo " " >> "$sshconfig"
+        echo "Host $nodes_nam" >> "$sshconfig"
+        echo "   User ubuntu" >> "$sshconfig"
+        echo "   HostName $ip_address" >> "$sshconfig"
+        echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+        echo "   UserKnownHostsFile=~/dev/null" >> "$sshconfig"
+        echo "   StrictHostKeyChecking no" >> "$sshconfig"
+        echo "   PasswordAuthentication no" >> "$sshconfig"
+        echo "   ProxyJump $bastionNSO" >> "$sshconfig"
+        echo "$nodes_nam" >> "$hostsfile"
     done
 }
 
@@ -34,14 +34,21 @@ operation_process() {
     if ((wantednodes > totalnodes)); then
         add_nodes=$((wantednodes - totalnodes))
         echo "$(date) $add_nodes need to be added"
-        echo "[webservers]" >> $hostsfile
+        echo "[webservers]" >> "$hostsfile"
         for ((i=0; i<add_nodes; i++)); do
-            a=$(($totalnodes+1))
+            a=$(("$totalnodes"+1))
             nodes_name=${nodes}${a}
             server_create=$(openstack server create --image "Ubuntu 20.04 Focal Fossa 20200423" "$nodes_name" --key-name "$key_name" --flavor "1C-2GB-50GB" --network "$net_name" --security-group "$secgroupname")
-            totalnodes=$(($totalnodes+1))
+            totalnodes=$(("$totalnodes"+1))
             echo "$(date) Waiting for the server to become active"
-            sleep 10
+            server_status=""
+            while [ "$server_status" != "ACTIVE" ]; do
+                sleep 10
+                server_status=$(openstack server show "$nodes_name" -c status -f value)
+            done
+
+            echo "$(date) Server $nodes_name is active."
+        
         done
         echo "$(date) $add_nodes number of servers generated..."
         sleep 5
@@ -53,19 +60,19 @@ operation_process() {
         stop=0
 
         if ((del_nodes > stop)); then
-        echo "[webservers]" >> $hostsfile
+        echo "[webservers]" >> "$hostsfile"
             for ((i=del_nodes; i>0; i--)); do
                 server_delete=$(openstack server list --status ACTIVE -f value -c Name | grep -m1 -oP "$nametag"'_dev([1-9]+)')
                 serveremove=$(openstack server delete "$server_delete" --wait)
-                sleep 10
+                sleep 12
             done
             echo "$(date) $del_nodes number of servers deleted"
-            sleep 5
+            sleep 8
             dev_config
         fi
     else
         echo "$(date) Required Number of servers $wanted_nodes, already present."
-	echo "[webservers]" >> $hostsfile
+	echo "[webservers]" >> "$hostsfile"
 	dev_config
     fi
 }
@@ -101,62 +108,62 @@ do
 
     operation_process
 
-    HAPfixedip=$(openstack server show $proxy -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
-    HAPfixedip2=$(openstack server show $proxy2 -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
+    HAPfixedip=$(openstack server show "$proxy" -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
+    HAPfixedip2=$(openstack server show "$proxy2" -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
 
     echo "$(date) Generating config file"
-    echo "Host $bastionNSO" >> $sshconfig
-    echo "   User ubuntu" >> $sshconfig
-    echo "   HostName $f1" >> $sshconfig
-    echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
-    echo "   UserKnownHostsFile /dev/null" >> $sshconfig
-    echo "   StrictHostKeyChecking no" >> $sshconfig
-    echo "   PasswordAuthentication no" >> $sshconfig
+    echo "Host $bastionNSO" >> "$sshconfig"
+    echo "   User ubuntu" >> "$sshconfig"
+    echo "   HostName $f1" >> "$sshconfig"
+    echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+    echo "   UserKnownHostsFile /dev/null" >> "$sshconfig"
+    echo "   StrictHostKeyChecking no" >> "$sshconfig"
+    echo "   PasswordAuthentication no" >> "$sshconfig"
 
-    echo " " >> $sshconfig
-    echo "Host $proxy" >> $sshconfig
-    echo "   User ubuntu" >> $sshconfig
-    echo "   HostName $HAPfixedip" >> $sshconfig
-    echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
-    echo "   StrictHostKeyChecking no" >> $sshconfig
-    echo "   PasswordAuthentication no ">> $sshconfig
-    echo "   ProxyJump $bastionNSO" >> $sshconfig
+    echo " " >> "$sshconfig"
+    echo "Host $proxy" >> "$sshconfig"
+    echo "   User ubuntu" >> "$sshconfig"
+    echo "   HostName $HAPfixedip" >> "$sshconfig"
+    echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+    echo "   StrictHostKeyChecking no" >> "$sshconfig"
+    echo "   PasswordAuthentication no ">> "$sshconfig"
+    echo "   ProxyJump $bastionNSO" >> "$sshconfig"
 
-    echo " " >> $sshconfig
-    echo "Host $proxy2" >> $sshconfig
-    echo "   User ubuntu" >> $sshconfig
-    echo "   HostName $HAPfixedip2" >> $sshconfig
-    echo "   IdentityFile ~/.ssh/id_rsa" >> $sshconfig
-    echo "   StrictHostKeyChecking no" >> $sshconfig
-    echo "   PasswordAuthentication no ">> $sshconfig
-    echo "   ProxyJump $bastionNSO" >> $sshconfig
+    echo " " >> "$sshconfig"
+    echo "Host $proxy2" >> "$sshconfig"
+    echo "   User ubuntu" >> "$sshconfig"
+    echo "   HostName $HAPfixedip2" >> "$sshconfig"
+    echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+    echo "   StrictHostKeyChecking no" >> "$sshconfig"
+    echo "   PasswordAuthentication no ">> "$sshconfig"
+    echo "   ProxyJump $bastionNSO" >> "$sshconfig"
 
     echo "$(date) Generating host file"
-    echo "[bastion]" >> $hostsfile
-    echo "$bastionNSO" >> $hostsfile
-    echo " " >> $hostsfile
-    echo "[HAproxy]" >> $hostsfile
-    echo "$proxy" >> $hostsfile
-    echo "$proxy2" >> $hostsfile
-    echo " " >> $hostsfile
-    echo " " >> $hostsfile
-    echo "[primary_proxy]" >> $hostsfile
-    echo "$proxy" >> $hostsfile
-    echo " " >> $hostsfile
-    echo "[backup_proxy]" >> $hostsfile
-    echo "$proxy2" >> $hostsfile
-    echo " " >> $hostsfile
-    echo "[all:vars]" >> $hostsfile
-    echo "ansible_user=ubuntu" >> $hostsfile
-    echo "ansible_ssh_common_args="-F $sshconfig"" >> $hostsfile
+    echo "[bastion]" >> "$hostsfile"
+    echo "$bastionNSO" >> "$hostsfile"
+    echo " " >> "$hostsfile"
+    echo "[HAproxy]" >> "$hostsfile"
+    echo "$proxy" >> "$hostsfile"
+    echo "$proxy2" >> "$hostsfile"
+    echo " " >> "$hostsfile"
+    echo " " >> "$hostsfile"
+    echo "[primary_proxy]" >> "$hostsfile"
+    echo "$proxy" >> "$hostsfile"
+    echo " " >> "$hostsfile"
+    echo "[backup_proxy]" >> "$hostsfile"
+    echo "$proxy2" >> "$hostsfile"
+    echo " " >> "$hostsfile"
+    echo "[all:vars]" >> "$hostsfile"
+    echo "ansible_user=ubuntu" >> "$hostsfile"
+    echo "ansible_ssh_common_args="-F "$sshconfig""" >> "$hostsfile"
 
     server_ids=$(openstack server list -f value -c ID)
     # Check the status of each server
     for server_id in $server_ids; do
-        status=$(openstack server show -f value -c status $server_id)
+        status=$(openstack server show -f value -c status "$server_id")
 		    while [ "$status" != "ACTIVE" ]; do
 			    sleep 10
-		        status=$(openstack server show -f value -c status $server_id)
+		        status=$(openstack server show -f value -c status "$server_id")
 		    done
 		    echo "$(date) Server $server_id is active"
     done
