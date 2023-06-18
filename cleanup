@@ -104,7 +104,7 @@ openrc=$1
 nametag=$2
 sshkey=$3
 no_of_nodes=3
-source $openrc
+source "$openrc"
 echo "$(date) Initialising Cleanup"
 net_name="$2_network"
 snet_name="$2_subnet"
