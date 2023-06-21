@@ -11,7 +11,7 @@ dev_config(){
     do
         a=$(($i+1))
         nodes_nam=${nodes}${a}
-        ip_address=$(openstack server list --name "$nodes_nam" -c Networks -f value | grep -Po  '\d+\.\d+\.\d+\.\d+')
+        ip_address=$(openstack server list --name "$nodes_nam" --status ACTIVE -c Networks -f value | grep -Po  '\d+\.\d+\.\d+\.\d+')
         echo " " >> "$sshconfig"
         echo "Host $nodes_nam" >> "$sshconfig"
         echo "   User ubuntu" >> "$sshconfig"
