@@ -3,6 +3,7 @@
 openrc=$1
 nametag=$2
 sshkey=$3
+sshk=${sshkey%.pub}
 no_of_nodes=3
 source "$openrc"
 echo "$(date) ###########INSTALLING############"
@@ -205,7 +206,7 @@ dev_config(){
         echo "Host $nodes_nam" >> "$sshconfig"
         echo "   User ubuntu" >> "$sshconfig"
         echo "   HostName $ip_address" >> "$sshconfig"
-        echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+        echo "   IdentityFile /$PWD/$1" >> "$sshconfig"
         echo "   UserKnownHostsFile=~/dev/null" >> "$sshconfig"
         echo "   StrictHostKeyChecking no" >> "$sshconfig"
         echo "   PasswordAuthentication no" >> "$sshconfig"
@@ -236,7 +237,7 @@ if (("$no_of_nodes" > "$dev_count")); then
         echo "$(date) Server $nodes_name is active."
     # Proceed with the rest of your code
     done
-    dev_config
+    dev_config $sshk
 elif (("$no_of_nodes" < "$dev_count")); then
     del_nodes=$(("$dev_count" - "$no_of_nodes"))
     echo "$(date) $del_nodes need to be removed"
@@ -249,7 +250,7 @@ elif (("$no_of_nodes" < "$dev_count")); then
                 serveremove=$(openstack server delete "$server_delete" --wait)
                 sleep 10
             done
-            dev_config
+            dev_config $sshk
         fi
     else
         echo "$(date) Required Number of servers $wanted_nodes, already present."
@@ -261,7 +262,7 @@ echo " " >> "$sshconfig"
 echo "Host $bastionNSO" >> "$sshconfig"
 echo "   User ubuntu" >> "$sshconfig"
 echo "   HostName $f1" >> "$sshconfig"
-echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+echo "   IdentityFile /$PWD/$sshk" >> "$sshconfig"
 echo "   UserKnownHostsFile /dev/null" >> "$sshconfig"
 echo "   StrictHostKeyChecking no" >> "$sshconfig"
 echo "   PasswordAuthentication no" >> "$sshconfig"
@@ -270,7 +271,7 @@ echo " " >> "$sshconfig"
 echo "Host $proxy" >> "$sshconfig"
 echo "   User ubuntu" >> "$sshconfig"
 echo "   HostName $HAPfixedip" >> "$sshconfig"
-echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+echo "   IdentityFile /$PWD/$sshk" >> "$sshconfig"
 echo "   StrictHostKeyChecking no" >> "$sshconfig"
 echo "   PasswordAuthentication no ">> "$sshconfig"
 echo "   ProxyJump $bastionNSO" >> "$sshconfig"
@@ -279,7 +280,7 @@ echo " " >> "$sshconfig"
 echo "Host $proxy2" >> "$sshconfig"
 echo "   User ubuntu" >> "$sshconfig"
 echo "   HostName $HAPfixedip2" >> "$sshconfig"
-echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+echo "   IdentityFile /$PWD/$sshk" >> "$sshconfig"
 echo "   StrictHostKeyChecking no" >> "$sshconfig"
 echo "   PasswordAuthentication no ">> "$sshconfig"
 echo "   ProxyJump $bastionNSO" >> "$sshconfig"
