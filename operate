@@ -7,9 +7,9 @@ dev_config(){
     totalservers=$(openstack server list --column Name -f value)
     totalnodes=$(grep -c "$nodes" <<< "$totalservers")
 
-    for ((i=0; i<reqnodelistnodes; i++))
+    for ((i=0; i<totalnodes; i++))
     do
-        a=$(($totalnodes+1))
+        a=$(($i+1))
         nodes_nam=${nodes}${a}
         ip_address=$(openstack server list --name "$nodes_nam" -c Networks -f value | grep -Po  '\d+\.\d+\.\d+\.\d+')
         echo " " >> "$sshconfig"
