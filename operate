@@ -2,8 +2,10 @@
 
 
 dev_config(){
-    nodelist=$(openstack server list --column Name -f value)
-    totalnodes=$(grep -c "$nodes" <<< "$nodelist")
+    nodelist=$(openstack server list --status ACTIVE --column Name -f value)
+    reqnodelistnodes=$(grep -c "$nodes" <<< "$nodelist")
+    totalservers=$(openstack server list --column Name -f value)
+    totalnodes=$(grep -c "$nodes" <<< "$totalservers")
 
     for ((i=0; i<totalnodes; i++))
     do
@@ -14,7 +16,7 @@ dev_config(){
         echo "Host $nodes_nam" >> "$sshconfig"
         echo "   User ubuntu" >> "$sshconfig"
         echo "   HostName $ip_address" >> "$sshconfig"
-        echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+        echo "   IdentityFile /$PWD/$1" >> "$sshconfig"
         echo "   UserKnownHostsFile=~/dev/null" >> "$sshconfig"
         echo "   StrictHostKeyChecking no" >> "$sshconfig"
         echo "   PasswordAuthentication no" >> "$sshconfig"
@@ -27,12 +29,14 @@ operation_process() {
     wantednodes=$(cat servers.conf)
     echo "$(date) we want $wantednodes number of servers in total."
 
-    nodelist=$(openstack server list --column Name -f value)
-    totalnodes=$(grep -c "$nodes" <<< "$nodelist")
+    nodelist=$(openstack server list --status ACTIVE --column Name -f value)
+    reqnodelist=$(grep -c "$nodes" <<< "$nodelist")
+    totalservers=$(openstack server list --column Name -f value)
+    totalnodes=$(grep -c "$nodes" <<< "$totalservers")
     echo "$(date) there are $totalnodes nodes present"
 
-    if ((wantednodes > totalnodes)); then
-        add_nodes=$((wantednodes - totalnodes))
+    if ((wantednodes > reqnodelist)); then
+        add_nodes=$((wantednodes - reqnodelist))
         echo "$(date) $add_nodes need to be added"
         echo "[webservers]" >> "$hostsfile"
         for ((i=0; i<add_nodes; i++)); do
@@ -48,14 +52,24 @@ operation_process() {
             done
 
             echo "$(date) Server $nodes_name is active."
-        
+            server_ids=$(openstack server list --status ACTIVE -f value -c ID)
+            # Check the status of each server
+            for server_id in $server_ids; do
+               status=$(openstack server show -f value -c status "$server_id")
+                    while [ "$status" != "ACTIVE" ]; do
+                            sleep 10
+                        status=$(openstack server show -f value -c status "$server_id")
+                    done
+                    echo "$(date) Server $server_id is active"
+            done
+
         done
         echo "$(date) $add_nodes number of servers generated..."
         sleep 5
-        dev_config
+        dev_config $1
 
-    elif ((wantednodes < totalnodes)); then
-        del_nodes=$((totalnodes - wantednodes))
+    elif ((wantednodes < reqnodelist)); then
+        del_nodes=$((reqnodelist - wantednodes))
         echo "$(date) $del_nodes need to be removed"
         stop=0
 
@@ -68,12 +82,12 @@ operation_process() {
             done
             echo "$(date) $del_nodes number of servers deleted"
             sleep 8
-            dev_config
+            dev_config $1
         fi
     else
         echo "$(date) Required Number of servers $wanted_nodes, already present."
-	echo "[webservers]" >> "$hostsfile"
-	dev_config
+	    echo "[webservers]" >> "$hostsfile"
+	    dev_config $1
     fi
 }
 
@@ -81,7 +95,7 @@ dandt=$(date)
 openrc="$1"
 nametag="$2"
 sshkey="$3"
-
+sshk=${sshkey%.pub}
 echo "$(date) Initializing the operate sequence..."
 source "$openrc"
 net_name="${2}_network"
@@ -106,7 +120,7 @@ do
     test -f "$knownhosts" && rm "$knownhosts"
     test -f "$hostsfile" && rm "$hostsfile"
 
-    operation_process
+    operation_process $sshk
 
     HAPfixedip=$(openstack server show "$proxy" -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
     HAPfixedip2=$(openstack server show "$proxy2" -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
@@ -115,7 +129,7 @@ do
     echo "Host $bastionNSO" >> "$sshconfig"
     echo "   User ubuntu" >> "$sshconfig"
     echo "   HostName $f1" >> "$sshconfig"
-    echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+    echo "   IdentityFile /$PWD/$sshk" >> "$sshconfig"
     echo "   UserKnownHostsFile /dev/null" >> "$sshconfig"
     echo "   StrictHostKeyChecking no" >> "$sshconfig"
     echo "   PasswordAuthentication no" >> "$sshconfig"
@@ -124,7 +138,7 @@ do
     echo "Host $proxy" >> "$sshconfig"
     echo "   User ubuntu" >> "$sshconfig"
     echo "   HostName $HAPfixedip" >> "$sshconfig"
-    echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+    echo "   IdentityFile /$PWD/$sshk" >> "$sshconfig"
     echo "   StrictHostKeyChecking no" >> "$sshconfig"
     echo "   PasswordAuthentication no ">> "$sshconfig"
     echo "   ProxyJump $bastionNSO" >> "$sshconfig"
@@ -133,7 +147,7 @@ do
     echo "Host $proxy2" >> "$sshconfig"
     echo "   User ubuntu" >> "$sshconfig"
     echo "   HostName $HAPfixedip2" >> "$sshconfig"
-    echo "   IdentityFile ~/.ssh/id_rsa" >> "$sshconfig"
+    echo "   IdentityFile /$PWD/$sshk" >> "$sshconfig"
     echo "   StrictHostKeyChecking no" >> "$sshconfig"
     echo "   PasswordAuthentication no ">> "$sshconfig"
     echo "   ProxyJump $bastionNSO" >> "$sshconfig"
@@ -157,16 +171,16 @@ do
     echo "ansible_user=ubuntu" >> "$hostsfile"
     echo "ansible_ssh_common_args="-F "$sshconfig""" >> "$hostsfile"
 
-    server_ids=$(openstack server list -f value -c ID)
+   # server_ids=$(openstack server list --status ACTIVE -f value -c ID)
     # Check the status of each server
-    for server_id in $server_ids; do
-        status=$(openstack server show -f value -c status "$server_id")
-		    while [ "$status" != "ACTIVE" ]; do
-			    sleep 10
-		        status=$(openstack server show -f value -c status "$server_id")
-		    done
-		    echo "$(date) Server $server_id is active"
-    done
+  #  for server_id in $server_ids; do
+ #       status=$(openstack server show -f value -c status "$server_id")
+#		    while [ "$status" != "ACTIVE" ]; do
+#			    sleep 10
+#		        status=$(openstack server show -f value -c status "$server_id")
+#		    done
+#		    echo "$(date) Server $server_id is active"
+#    done
 
     sleep 5
 
