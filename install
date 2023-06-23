@@ -8,8 +8,7 @@ no_of_nodes=3
 source "$openrc"
 echo "$(date) ###########INSTALLING############"
 echo "$(date) Starting deployment of $nametag using $openrc for credentials."
-sudo apt-get update 2>/dev/null
-sudo apt-get install jq -y 2>/dev/null
+
 net_name="$2_network"
 snet_name="$2_subnet"
 key_name="$2_key"
