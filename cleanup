@@ -127,6 +127,7 @@ test -f "floating1" && rm "floating1"
 test -f "floating2" && rm "floating2"
 test -f "vipaddr" && rm "vipaddr"
 test -f "unused" && rm "unused"
+test -f "node_count.txt" && rm "node_count.txt"
 
 delete_servers $nametag
 delete_floating_ips
