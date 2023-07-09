@@ -316,6 +316,8 @@ for server_id in $server_ids; do
 		echo "$(date) Server "$server_id" is active"
 done
 
+no_of_nodes=$(openstack server list | grep "$nodes" | wc -l > node_count.txt)
+
 sleep 5
 
 echo "$(date) initialising ansible-playbook"
