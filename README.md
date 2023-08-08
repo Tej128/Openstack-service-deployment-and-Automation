@@ -6,8 +6,7 @@ The project consists of three main codes
 3. Cleanup
 
 To run the codes, give the commands as follows:
-chmod +x filename
-./filename <openrc_file> <tag> <sshkey>
+ ./filename <openrc_file> <tag> <sshkey>
 
 *Note: The ssh key should be generated in the repo directory only and the ssh key to invoke the code should be the public key only*
 
