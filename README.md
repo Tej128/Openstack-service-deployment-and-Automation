@@ -11,8 +11,10 @@ To run the codes, give the commands as follows:
 *Note: The ssh key should be generated in the repo directory only and the ssh key to invoke the code should be the public key only*
 
 Requirements:
-1. Openstack (version == 5.8.0)
-2. Ansible (version == 2.10.8)
-3. python (version == 3.10.12)
-4. jq (version == 1.6)
+1. pip
+2. python
+3. Openstack
+4. jq 
+5. Ansible
+6. snmp
 
