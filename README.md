@@ -13,7 +13,7 @@ To run the codes, give the commands as follows:
 Requirements:
 1. pip
 2. python
-3. Openstack
+3. Openstack (5.2.0)
 4. jq 
 5. Ansible
 6. snmp
