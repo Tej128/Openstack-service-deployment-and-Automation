@@ -1,20 +1,36 @@
-# Opentstack-service-deployment-and-Automation
-This project gives the solution for deploying and operating a service within an OpenStack Cloud environment
-The project consists of three main codes
-1. Install
-2. Operate
-3. Cleanup
+# ☁️ OpenStack Service Deployment & Automation with Ansible
 
-To run the codes, give the commands as follows:
- ./filename <openrc_file> <tag> <sshkey>
+This project provides a complete automation solution for deploying, operating, and cleaning up services within an **OpenStack Cloud** environment. It combines CLI scripting and **Ansible playbooks** to manage the entire lifecycle of a cloud-based service deployment.
 
-*Note: The ssh key should be generated in the repo directory only and the ssh key to invoke the code should be the public key only*
+---
 
-Requirements:
-1. pip
-2. python
-3. Openstack (5.2.0)
-4. jq 
-5. Ansible
-6. snmp
+## 🧠 Why This Project?
+
+- 📦 Automates VM provisioning and teardown on OpenStack
+- ⚙️ Uses Ansible + Bash to orchestrate cloud service lifecycle
+- 🧹 Includes install, operate, and cleanup stages
+- 🔐 Handles SSH key creation and cloud authentication via openrc files
+
+---
+
+## 🔧 Tech Stack
+
+- **Python 3**
+- **Ansible**
+- **OpenStack CLI** (version 5.2.0)
+- **Bash / Shell scripting**
+- **jq** (for JSON parsing)
+- **SNMP** (optional monitoring)
+
+---
+## ⚙️ Getting Started
+
+### 🔑 Prerequisites
+
+- Python 3.6+
+- `pip`, `jq`, `snmp`
+- OpenStack CLI tools (v5.2.0)
+- Ansible installed:  
+  ```bash
+  pip install ansible
 
